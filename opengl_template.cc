@@ -48,8 +48,7 @@ void OpenGLContext::terminate()
 
 OpenGLContext::OpenGLContext(std::string windowName, int width, int height)
 {
-    std::cout << "HI";
-    // this->isInitiated = false;
+    this->isInitiated = false;
     /* Initialize the library */
     if (!glfwInit())
     {
