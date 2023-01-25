@@ -131,5 +131,8 @@ int main(void)
     }
 
     glfwTerminate();
+    glDeleteBuffers(1, &buffer);
+    glDeleteProgram(id);
+    delete[] arr;
     return 0;
 }

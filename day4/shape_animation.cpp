@@ -2,6 +2,7 @@
 
 #include "opengl_template.h"
 #include <cmath>
+
 std::string vertexShader =
     "#version 400\n"
     "\n"
@@ -118,4 +119,10 @@ int main()
         /* Wait for and process events */
         glfwWaitEvents();
     }
+    delete[] arr;
+    delete[] indices;
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &vao);
+    glDeleteBuffers(1, &ebo);
+    glDeleteProgram(id);
 }

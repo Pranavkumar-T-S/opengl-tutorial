@@ -142,9 +142,11 @@ int main()
         /* Poll for and process events */
         glfwWaitEvents();
     }
+    delete[] arr;
+    delete[] indices;
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &vao);
     glDeleteBuffers(1, &ebo);
-
+    glDeleteProgram(id);
     return 0;
 }
