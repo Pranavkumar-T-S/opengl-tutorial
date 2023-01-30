@@ -58,9 +58,14 @@ int main()
     float r = 0.5;
     int n, width, height, nrChannels;
     static unsigned int id = CreateShader(vertexShader, fragmentShader);
-    // loading texture image
+    // Reading texture image
     stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load("day5/opengl.png", &width, &height, &nrChannels, 0);
+    if (!data)
+    {
+        std::cout << "Unable to load texture image" << std::endl;
+        return 0;
+    }
 
     // Generating vertex coefficients and index array
     std::cout << " Enter the number of points to be generated: " << std::endl;
@@ -83,11 +88,6 @@ int main()
     glBindVertexArray(vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-    if (!data)
-    {
-        std::cout << "Unable to load texture image" << std::endl;
-        return 0;
-    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -113,6 +113,7 @@ int main()
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
+        // code for animation
         time_elapsed = glfwGetTime() - time_for_render;
         time_for_render = glfwGetTime();
         if (displacement.x + velocity.x * time_elapsed >= 0.5 || displacement.x + velocity.x * time_elapsed <= -0.5)
@@ -128,21 +129,25 @@ int main()
         color_counter %= 64;
         displacement = displacement + velocity * time_elapsed;
 
+        // setting uniforms 
         int translation = glGetUniformLocation(id, "translation");
         glUniform2f(translation, displacement.x, displacement.y);
         int inp_color = glGetUniformLocation(id, "inp_color");
         glUniform3f(inp_color, (color_counter / 16 % 4) / 3.0, (color_counter / 4 % 4) / 3.0, (color_counter / 1 % 4) / 3.0);
 
+        // drawing shapes
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glDrawElements(GL_TRIANGLE_FAN, n, GL_UNSIGNED_INT, 0);
+
+        // code to track fps
         fps++;
-        // glFlush();
         if (glfwGetTime() - time_for_fps >= 1)
         {
             time_for_fps = glfwGetTime();
             std::cout << "fps: " << fps << std::endl;
             fps = 0;
         }
+        // glFlush();
         // /* Swap front and back buffers */
         glfwSwapBuffers(opengl.window);
 
