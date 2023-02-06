@@ -1,0 +1,28 @@
+#include <iostream>
+
+std::string fragmentShader =
+"#version 400\n"
+"uniform float time;\n"
+"uniform vec2 resolution;\n"
+"out vec4 Color;\n"
+"\n"
+"void main(void) {\n"
+"vec3 rColor = vec3(0.9, 0.0, 0.3);\n"
+"vec3 gColor = vec3(0.0, 0.9, 0.3);\n"
+"vec3 bColor = vec3(0.0, 0.3, 0.9);\n"
+"vec3 yColor = vec3(0.9, 0.9, 0.3);\n"
+"\n"
+"vec2 p = (gl_FragCoord.xy * 2.0 - resolution);\n"
+"p /= resolution;\n"
+"float a = sin(p.x * 5.0 - time * 0.2) / 2.0;\n"
+"float b = cos(p.x * 5.0 - time * 0.5) / 2.0;\n"
+"float c = sin(p.x * 5.0 - time * 0.2 + 3.14) / 2.0;\n"
+"float d = cos(p.x * 5.0 - time * 0.5 + 3.14) / 2.0;\n"
+"\n"
+"float e = 0.01 / abs(p.y - a - 1.0);\n"
+"float f = 0.01 / abs(p.y - b - 1.0);\n"
+"float g = 0.01 / abs(p.y - c - 1.0);\n"
+"float h = 0.01 / abs(p.y - d - 1.0);\n"
+"vec3 destColor = rColor * e + gColor * f + bColor * g + yColor * h;\n"
+"Color = vec4(destColor, 1.0);\n"
+"}\n";
