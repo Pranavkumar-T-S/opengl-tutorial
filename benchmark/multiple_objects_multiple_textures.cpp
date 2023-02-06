@@ -5,6 +5,7 @@
 // #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
+#include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -128,11 +129,13 @@ int main()
     static unsigned int id = CreateShader(vertexShader, fragmentShader);
     glUseProgram(id);
 
+    // getting input from user
     int rows, columns, fps = 0;
     std::cout << "Enter number of objects per row/column: " << std::endl;
     std::cin >> rows;
     columns = rows;
     float time_for_fps = glfwGetTime();
+    long long cpu_time = 0, gpu_time = 0;
 
     while (!glfwWindowShouldClose(opengl.window))
     {
@@ -144,6 +147,7 @@ int main()
         int inp_color = glGetUniformLocation(id, "inp_color");
         glUniform3f(inp_color, color[0] / 10.0, color[1] / 10.0, color[2] / 10.0);
 
+        auto start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < columns; j++)
@@ -161,17 +165,28 @@ int main()
                 glDrawElements(GL_TRIANGLE_FAN, n, GL_UNSIGNED_INT, 0);
             }
         }
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        cpu_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                        elapsed)
+                        .count();
 
         // code to track fps
         fps++;
         if (glfwGetTime() - time_for_fps >= 1)
         {
             time_for_fps = glfwGetTime();
-            std::cout << "fps: " << fps << std::endl;
+            std::cout << "fps: " << fps << " cpu time: " << cpu_time << "  gpu time: " << gpu_time << std::endl;
             fps = 0;
+            cpu_time = gpu_time = 0;
         }
+        start = std::chrono::high_resolution_clock::now();
         /* Swap front and back buffers */
         glfwSwapBuffers(opengl.window);
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+
+        gpu_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                        elapsed)
+                        .count();
 
         /* Wait for and process events */
         glfwPollEvents();
