@@ -92,6 +92,20 @@ void OpenGLContext::setCallback(GLFWkeyfun fun)
     glfwSetKeyCallback(this->window, fun);
 }
 
+void OpenGLContext::setCurPosCallback(GLFWcursorposfun fun)
+{
+    glfwSetCursorPosCallback(this->window, fun);
+}
+
+void OpenGLContext::setMouseButtonCallback(GLFWmousebuttonfun fun)
+{
+    glfwSetMouseButtonCallback(this->window, fun);
+}
+
+void OpenGLContext::setScrollCallback(GLFWscrollfun fun)
+{
+    glfwSetScrollCallback(this->window, fun);
+}
 OpenGLContext::~OpenGLContext()
 {
     this->terminate();

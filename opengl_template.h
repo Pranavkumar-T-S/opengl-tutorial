@@ -13,5 +13,8 @@ public:
     bool isInitiated;
     OpenGLContext(std::string windowName, int width = 640, int height = 480);
     void setCallback(GLFWkeyfun fun);
+    void setMouseButtonCallback(GLFWmousebuttonfun fun);
+    void setCurPosCallback(GLFWcursorposfun fun);
+    void setScrollCallback(GLFWscrollfun fun);
     ~OpenGLContext();
 };
