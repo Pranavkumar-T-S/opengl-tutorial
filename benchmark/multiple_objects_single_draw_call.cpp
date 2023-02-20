@@ -27,7 +27,7 @@ std::string fragmentShader =
     "\n"
     "void main()\n"
     "{\n"
-    "color = vec4(1.0f, 1.0f, 1.0f, 0.0f);\n"
+    "color = vec4(inp_color, 1.0f);\n"
     "}\n";
 
 int color[3] = {10, 10, 10};
@@ -61,7 +61,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     scale += yoffset / 10;
     scale = scale > 0.0f ? scale : 0.0f;
-    // view = glm::scale(view, glm::vec3((1.0f + yoffset / 100.0f), (1.0f + yoffset / 100.0f), 1.0f));
     // std::cout << "mouse_scroll  " << xoffset << ' ' << yoffset << std::endl;
 }
 
