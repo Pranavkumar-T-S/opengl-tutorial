@@ -161,6 +161,7 @@ int main()
     glUseProgram(id);
 
     float time_for_fps = glfwGetTime();
+    long long draw_time = 0, flush_time = 0, draw_time_total = 0, flush_time_total = 0, frames_total = 0;
 
     while (!glfwWindowShouldClose(opengl.window))
     {
@@ -168,6 +169,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* Render here */
+        auto start = std::chrono::high_resolution_clock::now();
 
         int inp_color = glGetUniformLocation(id, "inp_color");
         glUniform3f(inp_color, color[0] / 10.0, color[1] / 10.0, color[2] / 10.0);
@@ -182,21 +184,37 @@ int main()
                 glDrawElements(GL_TRIANGLE_FAN, n, GL_UNSIGNED_INT, 0);
             }
         }
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        draw_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                         elapsed)
+                         .count();
+        start = std::chrono::high_resolution_clock::now();
+        /* Swap front and back buffers */
+        glfwSwapBuffers(opengl.window);
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+
+        flush_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                          elapsed)
+                          .count();
 
         // code to track fps
         fps++;
         if (glfwGetTime() - time_for_fps >= 1)
         {
             time_for_fps = glfwGetTime();
-            std::cout << "fps: " << fps << std::endl;
+            std::cout << "fps: " << fps << " cpu time: " << (double)draw_time / fps / 1000 << "  gpu time: " << (double)flush_time / fps / 1000 << std::endl;
+            draw_time_total += draw_time;
+            flush_time_total += flush_time;
+            frames_total += fps;
             fps = 0;
+            draw_time = flush_time = 0;
         }
-        /* Swap front and back buffers */
-        glfwSwapBuffers(opengl.window);
 
         /* Wait for and process events */
         glfwPollEvents();
     }
+    std::cout << "Avg fps: " << (double)frames_total / (draw_time_total + flush_time_total) * 1000000 << " Avg total time: " << (double)(draw_time_total + flush_time_total) / frames_total / 1000 << " Avg cpu function time : " << (double)draw_time_total / frames_total / 1000 << " Avg gpu time: " << (double)flush_time_total / frames_total / 1000 << std::endl;
+
     delete[] arr;
     delete[] indices;
     glDeleteBuffers(1, vbo);

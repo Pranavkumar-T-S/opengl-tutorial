@@ -7,8 +7,6 @@
 // #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 std::string vertexShader =
     "#version 400\n"
@@ -129,7 +127,7 @@ int main()
     }
 
     // Generate transformed vertex coefficients and index array for all objects
-    std::unique_ptr<float[]> transformed_vertices = std::unique_ptr<float[]>(new float[2 * n * rows * columns]);
+    std::unique_ptr<float[]> transformed_vertices = std::unique_ptr<float[]>(new float[5 * n * rows * columns]);
     std::unique_ptr<uint[]> indices = std::unique_ptr<uint[]>(new uint[(n + 1) * rows * columns]);
 
     for (int row = 0; row < rows; row++)
@@ -204,11 +202,10 @@ int main()
     glPrimitiveRestartIndex((uint)-1);
 
     float time_for_fps = glfwGetTime();
+    long long draw_time = 0, flush_time = 0, draw_time_total = 0, flush_time_total = 0, frames_total = 0;
 
     // Get uniform locations
     int uni_view = glGetUniformLocation(id, "view");
-    int uni_model = glGetUniformLocation(id, "model");
-    int uni_color = glGetUniformLocation(id, "inp_color");
 
     while (!glfwWindowShouldClose(opengl.window))
     {
@@ -221,28 +218,55 @@ int main()
         view = glm::scale(view, glm::vec3(scale, scale, 1));
         view = translate(view, translation);
 
-        glUniform3f(uni_color, color[0] / 10.0, color[1] / 10.0, color[2] / 10.0);
         glUniformMatrix4fv(uni_view, 1, GL_FALSE, glm::value_ptr(view));
-
+        auto start = std::chrono::high_resolution_clock::now();
+        // set random color to vertices of first object (bottom left)
+        for (int i = 0; i < n; i++)
+        {
+            void *a = glMapBufferRange(GL_ARRAY_BUFFER, (5 * i + 2) * sizeof(float), 3 * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+            float data[3];
+            data[0] = (float)(rand()) / RAND_MAX;
+            data[1] = (float)(rand()) / RAND_MAX;
+            data[2] = (float)(rand()) / RAND_MAX;
+            memcpy(a, data, sizeof(data));
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+        }
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLE_FAN, (n + 1) * rows * columns, GL_UNSIGNED_INT, 0);
+
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        draw_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                         elapsed)
+                         .count();
+        start = std::chrono::high_resolution_clock::now();
+        /* Swap front and back buffers */
+        glfwSwapBuffers(opengl.window);
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+
+        flush_time += std::chrono::duration_cast<std::chrono::microseconds>(
+                          elapsed)
+                          .count();
 
         // code to track fps
         fps++;
         if (glfwGetTime() - time_for_fps >= 1)
         {
             time_for_fps = glfwGetTime();
-            std::cout << "fps: " << fps << std::endl;
+            std::cout << "fps: " << fps << " cpu time: " << (double)draw_time / fps / 1000 << "  gpu time: " << (double)flush_time / fps / 1000 << std::endl;
+            draw_time_total += draw_time;
+            flush_time_total += flush_time;
+            frames_total += fps;
             fps = 0;
+            draw_time = flush_time = 0;
         }
-        /* Swap front and back buffers */
-        glfwSwapBuffers(opengl.window);
 
         /* Wait for and process events */
         glfwPollEvents();
     }
+    std::cout << "Avg fps: " << (double)frames_total / (draw_time_total + flush_time_total) * 1000000 << " Avg total time: " << (double)(draw_time_total + flush_time_total) / frames_total / 1000 << " Avg cpu function time : " << (double)draw_time_total / frames_total / 1000 << " Avg gpu time: " << (double)flush_time_total / frames_total / 1000 << std::endl;
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &vao);
     glDeleteBuffers(1, &ebo);
     glDeleteProgram(id);
+    glfwTerminate();
 }
