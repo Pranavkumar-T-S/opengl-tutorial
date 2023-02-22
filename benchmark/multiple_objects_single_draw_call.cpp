@@ -1,5 +1,6 @@
 // Use view matrix in shader program and draw multiple objects by single OpenGL draw call
 // compute all objects vertices and load it in single VBO
+// Add random color to vertices and change colors for one object using glMapBufferRange() each frame
 #include "opengl_template.h"
 // #include <glm/mat4x4.hpp>
 // #include <glm/vec3.hpp>
@@ -11,23 +12,26 @@
 
 std::string vertexShader =
     "#version 400\n"
-    "layout (location = 0) in vec4 position;\n"
+    "in vec4 position;\n"
+    "in vec3 color;\n"
+    "out vec3 ver_color;\n"
     "uniform mat4 view;\n"
     "\n"
     "void main()\n"
     "{\n"
     " gl_Position = view * position;\n"
+    "ver_color = color;\n"
     "}\n";
 
 std::string fragmentShader =
     "#version 400\n"
     "\n"
+    "in vec3 ver_color;"
     "out vec4 color;\n"
-    "uniform vec3 inp_color;\n"
     "\n"
     "void main()\n"
     "{\n"
-    "color = vec4(inp_color, 1.0f);\n"
+    "color = vec4(ver_color, 1.0f);\n"
     "}\n";
 
 int color[3] = {10, 10, 10};
@@ -59,7 +63,7 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    scale += yoffset / 10;
+    scale *= (1 + yoffset / 10);
     scale = scale > 0.0f ? scale : 0.0f;
     // std::cout << "mouse_scroll  " << xoffset << ' ' << yoffset << std::endl;
 }
@@ -141,8 +145,12 @@ int main()
             {
                 glm::vec4 vertex(vertex_arr[2 * i], vertex_arr[2 * i + 1], 0.0f, 1.0f);
                 vertex = trans * vertex;
-                transformed_vertices[(((row * columns) + column) * n + i) * 2] = vertex.x;
-                transformed_vertices[(((row * columns) + column) * n + i) * 2 + 1] = vertex.y;
+                transformed_vertices[(((row * columns) + column) * n + i) * 5] = vertex.x;
+                transformed_vertices[(((row * columns) + column) * n + i) * 5 + 1] = vertex.y;
+                float time = glfwGetTime() > 1 ? glfwGetTime() - (int)glfwGetTime() : glfwGetTime();
+                transformed_vertices[(((row * columns) + column) * n + i) * 5 + 2] = (float)(rand()) / RAND_MAX;
+                transformed_vertices[(((row * columns) + column) * n + i) * 5 + 3] = (float)(rand()) / RAND_MAX;
+                transformed_vertices[(((row * columns) + column) * n + i) * 5 + 4] = (float)(rand()) / RAND_MAX;
                 indices[((row * columns) + column) * (n + 1) + i] = ((row * columns) + column) * n + i;
             }
             // Add Primitive Restart Index at last for every object indices
@@ -154,12 +162,19 @@ int main()
     // {
     //     for (int j = 0; j < n; j++)
     //     {
-    //         std::cout << transformed_vertices[(i * n) + j * 2] << ' ' << transformed_vertices[(i * n) + j * 2 + 1] << ' ' << indices[i * (n + 1) + j] << "   ";
+    //         std::cout << transformed_vertices[(i * n) + j * 5] << ' ' << transformed_vertices[(i * n) + j * 5 + 1] << ' ' << transformed_vertices[(i * n) + j * 5 + 2] << ' ' << transformed_vertices[(i * n) + j * 5 + 3] << ' ' << transformed_vertices[(i * n) + j * 5 + 4] << ' ' << indices[i * (n + 1) + j] << "   ";
     //     }
     //     std::cout << indices[i * (n + 1) + n];
 
     //     std::cout << std::endl;
     // }
+
+    static unsigned int id = CreateShader(vertexShader, fragmentShader);
+    glUseProgram(id);
+    uint sl_positions, sl_colors;
+    sl_positions = glGetAttribLocation(id, "position");
+    sl_colors = glGetAttribLocation(id, "color");
+
     // Transmit vertex points and indices
     unsigned int ebo;
     unsigned int vao, vbo;
@@ -168,21 +183,21 @@ int main()
     glGenBuffers(1, &ebo);
 
     glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vao);
-    glBufferData(GL_ARRAY_BUFFER, 2 * n * rows * columns * sizeof(float), transformed_vertices.get(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, 5 * n * rows * columns * sizeof(float), transformed_vertices.get(), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (n + 1) * rows * columns * sizeof(uint), indices.get(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *)0);
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(sl_positions);
+    glVertexAttribPointer(sl_positions, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (const void *)0);
+    glEnableVertexAttribArray(sl_colors);
+    glVertexAttribPointer(sl_colors, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (const void *)(2 * sizeof(float)));
 
-    // Set GLFW callbacks and load shader program
+    // Set GLFW callbacks
     opengl.setCallback(key_callback);
     opengl.setCurPosCallback(cursor_position_callback);
     opengl.setMouseButtonCallback(mouse_button_callback);
     opengl.setScrollCallback(scroll_callback);
-    static unsigned int id = CreateShader(vertexShader, fragmentShader);
-    glUseProgram(id);
 
     // Set Primitive Restart Index
     glEnable(GL_PRIMITIVE_RESTART);
