@@ -7,7 +7,8 @@
 // #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-
+#include <chrono>
+#define uint unsigned int
 std::string vertexShader =
     "#version 400\n"
     "in vec4 position;\n"

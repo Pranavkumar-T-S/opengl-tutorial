@@ -3,7 +3,7 @@
 #include <iostream>
 #define M_PI 3.14159265358979323846
 #include <chrono>
-#define uint unsigned int
+typedef unsigned int  uint;
 
 int CreateShader(const std::string &, const std::string &);
 class OpenGLContext
