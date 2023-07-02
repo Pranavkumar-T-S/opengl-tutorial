@@ -94,6 +94,7 @@ int main()
     int uni_sigma = glGetUniformLocation(id, "sigma");
 
     int fps = 0;
+    float gpu_time = 0;
     float time_for_fps = glfwGetTime();
     while (!glfwWindowShouldClose(opengl.window))
     {
@@ -128,11 +129,15 @@ int main()
         if (glfwGetTime() - time_for_fps >= 1)
         {
             time_for_fps = glfwGetTime();
-            std::cout << "fps: " << fps << std::endl;
+            std::cout << "fps: " << fps << "  GPU time: " << gpu_time / fps << std::endl;
+            gpu_time = 0;
             fps = 0;
         }
+        glFinish();
+        auto start = std::chrono::high_resolution_clock::now();
         // /* Swap front and back buffers */
         glfwSwapBuffers(opengl.window);
+        gpu_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         /* Poll for and process events */
         glfwPollEvents();
