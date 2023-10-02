@@ -15,10 +15,11 @@ std::string vertexShader =
     "in vec4 position;"
     "uniform mat4 transform;"
     "out vec2 texCoord;"
+    "uniform mat4 view;"
     "\n"
     "void main()\n"
     "{\n"
-    " gl_Position = transform *position;\n"
+    " gl_Position = view * transform *position;\n"
     " texCoord = position.xy + vec2(0.5,0.5);"
     "}\n";
 
@@ -36,6 +37,38 @@ std::string fragmentShader =
     "}\n";
 
 int color[3] = {10, 10, 10};
+int track_cursor = false;
+glm::vec3 cursorPos;
+glm::vec3 translation = glm::vec3(0.0f);
+float scale = 1.0;
+
+static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
+{
+
+    if (track_cursor == 1)
+    {
+        translation.x += -(cursorPos.x - xpos) / 500 / scale;
+        translation.y += (cursorPos.y - ypos) / 500 / scale;
+    }
+    cursorPos.x = xpos;
+    cursorPos.y = ypos;
+    cursorPos.z = 0.0;
+}
+
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        track_cursor = action;
+    }
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    scale *= (1 + yoffset / 10);
+    scale = scale > 0.0f ? scale : 0.0f;
+    // std::cout << "mouse_scroll  " << xoffset << ' ' << yoffset << std::endl;
+}
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -66,7 +99,8 @@ int main()
     }
 
     // loading texture image
-    int width, height, nrChannels, num_of_textures = 50;
+    int width, height, nrChannels;
+    const int num_of_textures = 50;
     stbi_set_flip_vertically_on_load(true);
     unsigned int textures[num_of_textures];
     glGenTextures(num_of_textures, textures);
@@ -126,6 +160,9 @@ int main()
 
     // setting keyboard callback and loading shader program
     opengl.setCallback(key_callback);
+    opengl.setCurPosCallback(cursor_position_callback);
+    opengl.setMouseButtonCallback(mouse_button_callback);
+    opengl.setScrollCallback(scroll_callback);
     static unsigned int id = CreateShader(vertexShader, fragmentShader);
     glUseProgram(id);
 
@@ -137,10 +174,20 @@ int main()
     float time_for_fps = glfwGetTime();
     long long draw_time = 0, flush_time = 0, draw_time_total = 0, flush_time_total = 0, frames_total = 0;
 
+    // Get uniform locations
+    int uni_view = glGetUniformLocation(id, "view");
+
     while (!glfwWindowShouldClose(opengl.window))
     {
 
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Set view matrix
+        glm::mat4 view = glm::mat4(1.0);
+        view = glm::scale(view, glm::vec3(scale, scale, 1));
+        view = translate(view, translation);
+
+        glUniformMatrix4fv(uni_view, 1, GL_FALSE, glm::value_ptr(view));
 
         /* Render here */
         auto start = std::chrono::high_resolution_clock::now();
