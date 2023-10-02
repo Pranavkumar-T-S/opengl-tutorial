@@ -4,11 +4,9 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "d:\\glfw\\include",
-                "d:\\glew\\include",
-                "d:\\glm"
-                // "${env:HOME}/libraries/glew-2.2.0/include",
-                // "${env:HOME}/libraries/glm-0.9.9.8"
+                "${env:HOME}/libraries/glfw/include",
+                "${env:HOME}/libraries/glew-2.2.0/include",
+                "${env:HOME}/libraries/glm-0.9.9.8"
             ],
             "defines": [],
             "macFrameworkPath": [
